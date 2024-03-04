@@ -66,7 +66,15 @@ void Initialize_Modules( float _time_not_used_ )
     // Setup message handling to get processed at some desired rate.
     Initialize_Task( &task_message_handling, Task_Message_Handling );
 
+    Initialize_Task( &task_time_loop, Send_Loop_Time );
+    Initialize_Task( &task_send_time, Send_Time_Now ); t                                       
+
     // Initialize_Task( &task_message_handling_watchdog, /*watchdog timout period*/,  Task_Message_Handling_Watchdog );
+    Initialize_Task( &task_message_handling_watchdog,  Task_Message_Handling_Watchdog );
+
+
+    Task_Activate( &task_message_handling , 0 );
+    Task_Activate( &task_message_handling_watchdog , 0.1 );
 }
 
 /** Main program entry point. This routine configures the hardware required by the application, then
@@ -78,11 +86,20 @@ int main( void )
     Initialize_Modules( 0.0 );
 
     for( ;; ) {  // yet another way to do while (true)
-        Task_USB_Upkeep();
+        Task_USB_Upkeep(); 
 
-        Task_Run_If_Ready( &task_message_handling );
-        Task_Run_If_Ready( &task_restart );
+        Task_Run_If_Ready( &task_message_handling ); //always runs, never deactivated
+        Task_Run_If_Ready( &task_restart ); //Don't need to initialize every time? This might be why the loop is taking a long time.
+        //Run time is 0 so this will always run
+        Task_Run_If_Ready( &task_time_loop ); //Initialized before the main loop to function Send_Loop_Time
 
-        // Task_Run_If_Ready( &task_message_handling_watchdog );
+        //store:
+        //last_ran = time_task_loop -> time_last_ran
+
+        Task_Run_If_Ready( &task_send_time ); //Initialized before the main loop to function Send_Time_Now
+
+        //in Message Handling,
+
+        Task_Run_If_Ready( &task_message_handling_watchdog );
     }
 }

@@ -5,7 +5,7 @@
           www.mechanical.mines.edu
 */
 
-/*
+/*js
     Copyright (c) 2023 Andrew Petruska at Colorado School of Mines
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -49,6 +49,18 @@
  */
 void Filter_Init( Filter_Data_t* p_filt, float* numerator_coeffs, float* denominator_coeffs, uint8_t order )
 {
+    int length = order + 1;
+    rb_initialize_F(&(p_filt -> numerator));
+    rb_initialize_F(&(p_filt -> denominator));
+    rb_initialize_F(&(p_filt -> in_list));
+    rb_initialize_F(&(p_filt -> out_list));
+    
+    for(int i = 0; i < length; i++){
+        rb_push_back_F(&(p_filt -> numerator), numerator_coeffs[i]);
+        rb_push_back_F(&(p_filt -> denominator), denominator_coeffs[i]);
+        rb_push_back_F(&(p_filt -> in_list), 0); //INITIALIZE TO ZERO? SAME LENFTH AS NUMERATOR AND DENOMINATOR
+        rb_push_back_F(&(p_filt -> out_list), 0); //INITIALIZE TO ZERO? SAME LENFTH AS NUMERATOR AND DENOMINATOR
+    }
     return;
 }
 
@@ -60,6 +72,19 @@ void Filter_Init( Filter_Data_t* p_filt, float* numerator_coeffs, float* denomin
  */
 void Filter_ShiftBy( Filter_Data_t* p_filt, float shift_amount )
 {
+    int in_list_length = rb_length_F(&(p_filt -> in_list));
+    int out_list_length = rb_length_F(&(p_filt -> out_list));
+    for(int i = 0; i <= in_list_length; i++){
+        rb_set_F(&(p_filt -> in_list),i,shift_amount);
+        rb_set_F(&(p_filt -> out_list),i,shift_amount);
+    }
+
+    //WHY IS "SHIFT AMOUNT" A FLOAT AND WHY WOULD IT EVER BE ANYTING OTHER THAN 1?
+    //WHY IS THE FILTER_SHIFTBY TEST THE SAME AS THE FILTER_SETTO LIST?
+    //WOULD THINK THAT THE A AND B COEFFICIENTS ARE SET BY THE DESIRED FILTER TYPE AND CUTOFF FREQ, 
+    //  SO THOSE WOULD BE CONSTANT FROM THE TIME THEY ARE INITIALIZED,
+    //  A NEW ERROR AND IS RECORDED FROM THE PREVIOUS BATTERY READING, ALL THE IN_LIST AND OUT_LIST
+    //  VALUES SHOULD BE PUSHED DOWN BY ONLY 1
     return;
 }
 
@@ -71,18 +96,49 @@ void Filter_ShiftBy( Filter_Data_t* p_filt, float shift_amount )
  */
 void Filter_SetTo( Filter_Data_t* p_filt, float amount )
 {
+    //based on the main.c testing function, this appears to do exactly the same thing as ShiftBy?
+    int in_list_length = rb_length_F(&(p_filt -> in_list));
+    int out_list_length = rb_length_F(&(p_filt -> out_list));
+    for(int i = 0; i <= in_list_length; i++){
+        rb_set_F(&(p_filt -> in_list),i,amount);
+        rb_set_F(&(p_filt -> out_list),i,amount);
+    }
     return;
 }
 
-/**
- * Function Filter_Value adds a new value to the filter and returns the new output.
- * @param p_filt pointer to the filter object
- * @param value the new measurement or value
- * @return The newly filtered value
- */
 float Filter_Value( Filter_Data_t* p_filt, float value )
 {
-    return 0;
+    //"value" is the new error (input_list)
+    //pop the input list from the back
+    rb_pop_back_F(&(p_filt -> in_list));
+    //push the new error value to the front of the input list
+    rb_push_front_F(&(p_filt -> in_list), value);
+
+    float A_0 = rb_get_F(&(p_filt -> denominator),0);
+    float ans = 0.0;
+    float B_input = 0.0;
+    float A_output = 0.0;
+    float B_input_tmp = 0.0;
+    float A_output_tmp = 0.0;
+
+    int in_list_length = rb_length_F(&(p_filt -> in_list));
+    for(int i = 0; i < in_list_length; i++){
+        B_input_tmp = (rb_get_F(&(p_filt -> numerator),i)*rb_get_F(&(p_filt -> in_list),i)); 
+        B_input = B_input + B_input_tmp;
+    }
+
+    for(int i = 0; i <= in_list_length; i++){ //want this to be only 4 iterations long
+        A_output_tmp = rb_get_F(&(p_filt -> denominator),(i+1))*rb_get_F(&(p_filt -> out_list),i);
+        A_output = A_output + A_output_tmp;
+    }
+    ans = (B_input - A_output)/A_0;
+
+    //push this value to the front of the out_list
+    rb_push_front_F(&(p_filt -> out_list),ans);
+    //pop the output_list from the back
+    rb_pop_back_F(&(p_filt -> out_list));
+    float test_output = rb_get_F(&(p_filt -> out_list),0);
+    return rb_get_F(&(p_filt -> out_list),0);
 }
 
 /**
@@ -91,5 +147,6 @@ float Filter_Value( Filter_Data_t* p_filt, float value )
  */
 float Filter_Last_Output( Filter_Data_t* p_filt )
 {
-    return 0;
+    float ans = rb_get_F(&(p_filt -> out_list),0);
+    return ans;
 }

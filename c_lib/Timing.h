@@ -81,4 +81,6 @@ float  Timing_Get_Time_Sec();
  */
 float  Timing_Seconds_Since(const Time_t* time_start_p );
 
+ISR( TIMER0_COMPA_vect );
+
 #endif //LAB2_TIMING_TIMING_H
