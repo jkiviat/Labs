@@ -66,7 +66,15 @@ void Initialize_Modules( float _time_not_used_ )
     // Setup message handling to get processed at some desired rate.
     Initialize_Task( &task_message_handling, Task_Message_Handling );
 
+    Initialize_Task( &task_time_loop, Send_Loop_Time );
+    Initialize_Task( &task_send_time, Send_Time_Now );
+
     // Initialize_Task( &task_message_handling_watchdog, /*watchdog timout period*/,  Task_Message_Handling_Watchdog );
+    Initialize_Task( &task_message_handling_watchdog,  Task_Message_Handling_Watchdog );
+
+
+    Task_Activate( &task_message_handling , 0 );
+    Task_Activate( &task_message_handling_watchdog , 0.1 );
 }
 
 /** Main program entry point. This routine configures the hardware required by the application, then
@@ -76,13 +84,26 @@ int main( void )
 {
     Initialize_USB();
     Initialize_Modules( 0.0 );
+    // Time_t last_sent_time = Timing_Get_Time();
 
     for( ;; ) {  // yet another way to do while (true)
+
+        loop_time = Timing_Seconds_Since(&last_loop_time);
+        last_loop_time = Timing_Get_Time();
+
+
         Task_USB_Upkeep();
 
         Task_Run_If_Ready( &task_message_handling );
         Task_Run_If_Ready( &task_restart );
+        Task_Run_If_Ready( &task_time_loop );
+        Task_Run_If_Ready( &task_send_time );
 
-        // Task_Run_If_Ready( &task_message_handling_watchdog );
+        // if(Timing_Seconds_Since(&last_sent_time) > 1){
+        //     USB_Send_Msg("cf", 't', &loop_time, sizeof(loop_time));
+        //     last_sent_time = Timing_Get_Time();
+        // }
+
+        Task_Run_If_Ready( &task_message_handling_watchdog );
     }
 }

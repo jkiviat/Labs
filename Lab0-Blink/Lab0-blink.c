@@ -53,21 +53,28 @@ void blink_morse_str( char* str, uint16_t dot_length_ms )
     // WHILE: str[counter] is not null (0) and counter is < 255 (it's always good to work with an infinite-loop net)
     //
     // END FUNCTION
+    
+    int index = 0;
+    while(str[index] != '\0'){
+        blink_morse_char( str[index], dot_length_ms );
+        index++;
+    }
 }
 
 int main()
 {
     initialize_LED();
-    const uint16_t dot_length_ms = 250;
+    const uint16_t dot_length_ms = 100;
 
     while( 1 ) {
         // blink message!
-        blink_morse_char( 'S', dot_length_ms );
-        blink_morse_char( 'O', dot_length_ms );
-        blink_morse_char( 'S', dot_length_ms );
-        blink_morse_char( ' ', dot_length_ms );
+        // blink_morse_char( 'S', dot_length_ms );
+        // blink_morse_char( 'O', dot_length_ms );
+        // blink_morse_char( 'S', dot_length_ms );
+        // blink_morse_char( ' ', dot_length_ms );
 
         // Using your blink_morse_str function this would be called as:
         // blink_morse_str("SOS ", dot_length_ms);
+        blink_morse_str("HELLO WORLD ", dot_length_ms);
     }
 }

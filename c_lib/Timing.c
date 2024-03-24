@@ -29,6 +29,9 @@
 */
 
 #include "../c_lib/Timing.h"
+#include "../c_lib/SerialIO.h"
+#include "avr/io.h"
+#include "avr/interrupt.h"
 
 /** These define the internal counters that will be updated in the ISR to keep track of the time
  *  The volatile keyword is because they are changing in an ISR, the static means they are not
@@ -53,6 +56,22 @@ void Initialize_Timing()
     // *** MEGN540 Lab 2 ***
     // YOUR CODE HERE
     // Enable timing, setup prescalers, etc.
+    sei();
+    TCNT0 = 0;
+
+    // TCCR0A = 0;
+    TCCR0A |= (1 << WGM01);
+    TCCR0A &= (0 << WGM00);
+    TCCR0B &= (0 << WGM02);
+
+    // TCCR0B = 0;
+    TCCR0B |= (1 << CS01);
+    TCCR0B |= (1 << CS00);
+
+    // TIMSK0 = 0;
+    TIMSK0 |= (1 << OCIE0A);
+
+    OCR0A = 249;
 
     _count_ms = 0;
 }
@@ -65,7 +84,7 @@ float Timing_Get_Time_Sec()
 {
     // *** MEGN540 Lab 2 ***
     // YOUR CODE HERE
-    return 0;
+    return _count_ms * 0.001 + (TCNT0*4) * 0.000001;
 }
 Time_t Timing_Get_Time()
 {
@@ -73,7 +92,7 @@ Time_t Timing_Get_Time()
     // YOUR CODE HERE
     Time_t time = {
         .millisec = _count_ms,
-        .microsec = 0  // YOU NEED TO REPLACE THIS WITH A CALL TO THE TIMER0 REGISTER AND MULTIPLY APPROPRIATELY
+        .microsec = TCNT0*4  // YOU NEED TO REPLACE THIS WITH A CALL TO THE TIMER0 REGISTER AND MULTIPLY APPROPRIATELY
     };
 
     return time;
@@ -92,7 +111,7 @@ uint16_t Timing_Get_Micro()
 {
     // *** MEGN540 Lab 2 ***
     // YOUR CODE HERE
-    return 0;  // YOU NEED TO REPLACE THIS WITH A CALL TO THE TIMER0 REGISTER AND MULTIPLY APPROPRIATELY
+    return TCNT0*4;  // YOU NEED TO REPLACE THIS WITH A CALL TO THE TIMER0 REGISTER AND MULTIPLY APPROPRIATELY
 }
 
 /**
@@ -104,7 +123,9 @@ float Timing_Seconds_Since( const Time_t* time_start_p )
 {
     // *** MEGN540 Lab 2 ***
     // YOUR CODE HERE
-    float delta_time = 0;
+    float cur_time = Timing_Get_Time_Sec();
+    float prev_time = time_start_p->millisec * 0.001 + time_start_p->microsec * 0.000001;
+    float delta_time = cur_time - prev_time;
     return delta_time;
 }
 
@@ -121,3 +142,19 @@ float Timing_Seconds_Since( const Time_t* time_start_p )
     _count_ms ++;
 
 }*/
+ISR( TIMER0_COMPA_vect )
+{
+    // *** MEGN540 Lab 2 ***
+    // YOUR CODE HERE
+    // YOU NEED TO RESET THE Timer0 Value to 0 again!
+    // TCNT0 = 0;
+
+    // take care of upticks of both our internal and external variables.
+    _count_ms ++;
+
+    // if(_count_ms % 1000 == 0){
+    //     USB_Send_Byte('r');
+    // }
+
+
+}
