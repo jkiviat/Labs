@@ -57,7 +57,7 @@
 #include <ctype.h>         // For int32_t type
 #include <stdbool.h>       // For bool
 
-
+static const uint16_t MAX_PWM= 500;
 /**
  * Function Initialize_Motor_PWM initializes the motor PWM on Timer 1 for PWM based voltage control of the motors.
  * The Motor PWM system shall initialize in the disabled state for safety reasons. You should specifically enable
@@ -118,3 +118,5 @@ uint16_t MotorPWM_Get_Max();
 void MotorPWM_Set_Max( uint16_t MAX_PWM );
 
 #endif
+
+//commit

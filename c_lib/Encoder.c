@@ -176,4 +176,6 @@ ISR( INT6_vect )
     _right_counts += ( Right_A() ^ _last_right_B ) - ( _last_right_A ^ Right_B() );
     _last_right_A = Right_A();
     _last_right_B = Right_B();
+
 }
+//commit

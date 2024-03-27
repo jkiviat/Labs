@@ -124,3 +124,5 @@ void rb_set_F( Ring_Buffer_Float_t* p_buf, uint8_t index, float value );
 void rb_set_B( Ring_Buffer_Byte_t* p_buf, uint8_t index, uint8_t value );
 
 #endif
+
+//commit

@@ -377,6 +377,69 @@ void Task_Message_Handling( float _time_since_last )
             }
             break;
 
+        case 'd':
+            if( USB_Msg_Length() >= _Message_Length( 'd' ) ) {
+                USB_Msg_Get();
+
+                struct __attribute__( ( __packed__ ) ) {
+                    float distance;
+                    float direction;
+                } dist_dir;
+
+                USB_Msg_Read_Into( &dist_dir, sizeof( dist_dir ) );
+
+                //Determine whether the turn is to the left or right
+                //It is necessary to calculate this here because there are seperate functions and 
+                //structs for the left and right motors, and we need to know which motor to activate
+
+                bool left = determine_direction(dist_dir.direction); //Returns "true" if it is a left turn
+
+                if (left == true){
+
+                    int32_t current_enc = Encoder_Counts_Right(); //Current encoder counts
+
+                    //Add the arc length (in terms of encoder counts) that must be travelled to the 
+                    //current encoder count
+                    int32_t target = current_enc + turn_to_encoder(dist_dir.direction);
+
+                    Controller_Set_Target_Position(&right_cont, target);
+
+                    int32_t updated_enc = current_enc;
+                    int32_t updated_error = updated_enc - target;
+                    float meas = (float)updated_enc; //Controller_Update function takes a float for the measurement
+
+                    //Activate the right controller at intervals specified by the update period
+                    Task_Activate(&task_update_controller_right, update_period);
+                    //In the main loop, want to deactivate the task and turn off the motor when the target
+                    //has been reached.
+
+                    /*while(ABS(updated_error > 24)){ //Encoder count of 24 correlates to 1/8 inch
+
+                        float meas = (float)updated_enc;
+                        float u = Controller_Update(&right_cont, meas, update_period);
+                        u = Saturate(u,MAX_PWM);
+                        int16_t input_sig = round(u);
+
+                        Set_Motor_Values(0,input_sig);
+
+
+                        updated_enc = Encoder_Counts_Right(); 
+                        updated_error = updated_enc - target;
+
+                    }
+                    */
+                    //float u = Controller_Update(&right_cont, meas, update_period);
+                }
+
+                //Controller_update 
+                //Set_Motor_Values( pwm_values.left, pwm_values.right );
+
+                command_processed = true;
+            }
+            break;
+
+
+
         default:
             // What to do if you dont recognize the command character
             ;
@@ -445,3 +508,5 @@ static uint8_t _Message_Length( char cmd )
         default: return 0; break;
     }
 }
+
+//commit

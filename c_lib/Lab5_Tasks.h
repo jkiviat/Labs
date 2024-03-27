@@ -36,6 +36,8 @@
 #define LAB5_TASKS_H
 
 #include "Task_Management.h"
+#include "Controller.h"
+#include "Message_Handling.h"
 
 // Include your lab-specific headers here
 // e.g. #include "SerialIO.h"  // necessary for sending arithmatic results back to user
@@ -46,5 +48,14 @@
 // Put your lab-specific task functionality and data_structures (if necessary) here so it is accessable to both
 // message handeling and the Lab main loops.
 // e.g. void Send_Time_Now( float _time_since_last );
+
+Task_t task_update_controller_left;
+Task_t task_update_controller_right;
+
+int distance_to_encoder(float distance);
+int direction_to_encoder(float direction);
+void drive_dist_and_direction(Controller_t* p_cont, float distance, float direction);
+int turn_to_encoder(float direction);
+bool determine_direction(float direction);
 
 #endif  // ifndef LAB5_TASKS_H

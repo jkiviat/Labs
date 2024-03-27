@@ -40,7 +40,16 @@
 
 #include "Filter.h"
 
+float num[] = {65.03, -65.03};
+float den[] = {1, -0.9853};
+float kp = 1.2641;
+uint8_t order = 3;
+float update_period = .001; //1 kHz
+
 typedef struct { Filter_Data_t controller; float kp; float target_pos; float target_vel; float update_period;} Controller_t;
+
+Controller_t left_cont;
+Controller_t right_cont;
 
 /**
  * Function Saturate saturates a value to be within the range.
