@@ -75,6 +75,11 @@ void Initialize_Modules( float _time_not_used_ )
 
     Task_Activate( &task_message_handling , 0 );
     Task_Activate( &task_message_handling_watchdog , 0.1 );
+    Initialize_Task( &task_message_handling_watchdog,  Task_Message_Handling_Watchdog );
+
+
+    Task_Activate( &task_message_handling , 0 );
+    Task_Activate( &task_message_handling_watchdog , 0.1 );
 }
 
 /** Main program entry point. This routine configures the hardware required by the application, then

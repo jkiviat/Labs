@@ -51,11 +51,20 @@
 
 Task_t task_update_controller_left;
 Task_t task_update_controller_right;
+Task_t task_set_pwm_zero_left;
+Task_t task_set_pwm_zero_right;
 
 int distance_to_encoder(float distance);
 int direction_to_encoder(float direction);
 void drive_dist_and_direction(Controller_t* p_cont, float distance, float direction);
 int turn_to_encoder(float direction);
 bool determine_direction(float direction);
+float send_right_controller_update(Controller_t* p_cont, float dt);
+float send_left_controller_update(Controller_t* p_cont, float dt);
+void Set_Right_Motor(int16_t right);
+void Set_Left_Motor(int16_t left);
+void Set_PWM_Zero_Left( float _time_since_last );
+void Set_PWM_Zero_Right( float _time_since_last );
+float Get_Controller_Target(Controller_t* p_cont);
 
 #endif  // ifndef LAB5_TASKS_H

@@ -74,7 +74,6 @@ void orient_direction(Controller_t* p_cont, float direction){
 
     int dir_enc = direction_to_encoder(direction);
 
-
 }
 
 void drive_dist_and_direction(Controller_t* p_cont, float distance, float direction){
@@ -121,6 +120,8 @@ bool determine_direction(float direction){
 //the distance of a 45 degree arc has been travelled.
 int32_t turn_to_encoder(float direction){
 
+    //If the user enters a value outside the range of 0 to 360 degrees, these statements bring the entered value
+    //back within the range of 0 to 360.
     if (direction < 0.0){
         while(direction < 0.0){
             direction += direction +360.0;
@@ -131,13 +132,14 @@ int32_t turn_to_encoder(float direction){
         }
     } 
 
+    //The if statement below exists because if the user enters 350 degrees, we want to convert it to a 10 degree turn
     if (direction >= 180.0){
         direction = ABS(direction - 360.0);
     }
    
    // //Distance to travel for a 180 degree arc is known. Find the % of that distance for this particular turn.
     float turn_ratio = direction/180.0; 
-    float distance = round(turn_ratio*half_rot_dist); 
+    float distance = turn_ratio*half_rot_dist; 
 
     int32_t target_count = round(dist_per_count*distance); //Convert the arc distance to travel into encoder counts
 
@@ -149,25 +151,105 @@ int32_t turn_to_encoder(float direction){
 //It will update the controller and call the Set_PWM function based on the signal.
 //One of its arguments must be the controller struct (left or right) to update
 //It will be deactivated in the main loop when the encoder count is close enough to its target
-float send_controller_update(Controller_t* p_cont, float measurement, float dt){
+float send_right_controller_update(Controller_t* p_cont, float dt){
     //float Controller_Update( Controller_t* p_cont, float measurement, float dt )
 
     /*while(ABS(updated_error > 24)){ //Encoder count of 24 correlates to 1/8 inch
-
-                        float meas = (float)updated_enc;
-                        float u = Controller_Update(&right_cont, meas, update_period);
-                        u = Saturate(u,MAX_PWM);
-                        int16_t input_sig = round(u);
-
-                        Set_Motor_Values(0,input_sig);
-
-
-                        updated_enc = Encoder_Counts_Right(); 
-                        updated_error = updated_enc - target;
 */
-    float meas = (float)updated_enc;
+    float meas = (float)Encoder_Counts_Right();
+
+    //Need to call the controller that was initialized, that was passed into this function (done in the main.c)
+    float u = Controller_Update(p_cont, meas, dt);
+    u = Saturate(u,MAX_PWM);
+    int16_t input_sig = round(u);
+    Set_Right_Motor(input_sig); 
+
+}
+
+float send_left_controller_update(Controller_t* p_cont, float dt){
+    //float Controller_Update( Controller_t* p_cont, float measurement, float dt )
+
+    /*while(ABS(updated_error > 24)){ //Encoder count of 24 correlates to 1/8 inch
+*/
+    float meas = (float)Encoder_Counts_Right();
+
+    //Need to call the controller that was initialized, that was passed into this function (done in the main.c)
+    float u = Controller_Update(p_cont, meas, dt);
+    u = Saturate(u,MAX_PWM);
+    int16_t input_sig = round(u);
+    Set_Left_Motor(input_sig); 
 
     
-    float u = Controller_Update(p_cont, meas, dt);
 
+}
+
+void Set_Right_Motor(int16_t right)
+{
+    float bat_level = Filter_Last_Output( &filt );
+    if( bat_level < 0.1 ) {
+        struct {
+            char let[9];
+        } data = { .let = { 'P', 'O', 'W', 'E', 'R', ' ', 'O', 'F', 'F' } };
+        USB_Send_Msg( "c9s", '!', &data, sizeof( data ) );
+    } else if( bat_level < 3.6 ) {
+        struct {
+            char let[7];
+            float volts;
+        } data = { .let = { 'B', 'A', 'T', ' ', 'L', 'O', 'W' }, .volts = bat_level };
+        USB_Send_Msg( "c7sf", '!', &data, sizeof( data ) );
+    } else {
+        if( !MotorPWM_Is_Enabled() ) {
+            MotorPWM_Enable( true );
+        }
+        MototPWM_Set_Right( right );
+    }
+}
+
+void Set_Left_Motor(int16_t left)
+{
+    float bat_level = Filter_Last_Output( &filt );
+    if( bat_level < 0.1 ) {
+        struct {
+            char let[9];
+        } data = { .let = { 'P', 'O', 'W', 'E', 'R', ' ', 'O', 'F', 'F' } };
+        USB_Send_Msg( "c9s", '!', &data, sizeof( data ) );
+    } else if( bat_level < 3.6 ) {
+        struct {
+            char let[7];
+            float volts;
+        } data = { .let = { 'B', 'A', 'T', ' ', 'L', 'O', 'W' }, .volts = bat_level };
+        USB_Send_Msg( "c7sf", '!', &data, sizeof( data ) );
+    } else {
+        if( !MotorPWM_Is_Enabled() ) {
+            MotorPWM_Enable( true );
+        }
+        MototPWM_Set_Right( left );
+    }
+}
+
+void Set_PWM_Zero_Left( float _time_since_last )
+{
+    MotorPWM_Set_Left( 0 );
+    Task_Cancel( &task_set_pwm_zero_left );
+}
+
+
+void Set_PWM_Zero_Right( float _time_since_last )
+{
+    MototPWM_Set_Right( 0 );
+    Task_Cancel( &task_set_pwm_zero_right );
+}
+
+float Get_Controller_Target(Controller_t* p_cont){
+
+    float target;
+    if(p_cont -> target_vel != 0){
+        target = p_cont -> target_vel; //TARGET ENCODER VALUE
+
+    } else {
+        target = p_cont -> target_pos; //
+        
+    }
+
+    return target;
 }

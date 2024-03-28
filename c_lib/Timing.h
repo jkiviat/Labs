@@ -83,6 +83,8 @@ float  Timing_Seconds_Since(const Time_t* time_start_p );
 
 ISR( TIMER0_COMPA_vect );
 
+ISR( TIMER0_COMPA_vect );
+
 #endif //LAB2_TIMING_TIMING_H
 
 //commit

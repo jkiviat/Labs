@@ -40,9 +40,20 @@
 
 #include "Filter.h"
 
-float num[] = {65.03, -65.03};
-float den[] = {1, -0.9853};
-float kp = 1.2641;
+//Left Controller Parameters
+float num_left[] = {65.03, -65.03}; //THESE MUST BE UPDATED
+float den_left[] = {1, -0.9853}; //THESE MUST BE UPDATED
+float static kp_left = 1.2641; //THESE MUST BE UPDATED
+//float static kd_left = 1.0000; //THESE MUST BE UPDATED
+//float static alpha_left = 1.0000; //THESE MUST BE UPDATED
+
+//Right Controller Parameters
+float num_right[] = {65.03, -65.03}; //THESE MUST BE UPDATED
+float den_right[] = {1, -0.9853}; //THESE MUST BE UPDATED
+float kp_right = 1.2641; //THESE MUST BE UPDATED
+//float kd_right = 1.0000; //THESE MUST BE UPDATED
+//float alpha_right = 1.0000; //THESE MUST BE UPDATED
+
 uint8_t order = 3;
 float update_period = .001; //1 kHz
 

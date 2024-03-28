@@ -50,11 +50,14 @@ float Controller_Update( Controller_t* p_cont, float measurement, float dt ){
     } else {
         target = p_cont -> target_pos; //convert this to encoder count?
         //measurement plus distance
-
     }
 
-    float error = measurement - target;
-    float output = Filter_Value(&p_cont -> controller, error);
+    //Filter_Data_t* ptr_to_filt = &(p_cont -> controller);
+
+    //float output_this = (rb_get_F(&ptr_to_filt -> numerator,0))*;
+    //float error = measurement - target;
+    float output = Filter_Value(&p_cont -> controller, measurement);
+    //float error = target - measurement;
     //float output = (measurement - target)*
     float u = (p_cont -> kp)*(target - output);
     return u;

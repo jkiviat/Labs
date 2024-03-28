@@ -32,6 +32,9 @@
 #include "../c_lib/SerialIO.h"
 #include "avr/io.h"
 #include "avr/interrupt.h"
+#include "../c_lib/SerialIO.h"
+#include "avr/io.h"
+#include "avr/interrupt.h"
 
 /** These define the internal counters that will be updated in the ISR to keep track of the time
  *  The volatile keyword is because they are changing in an ISR, the static means they are not
@@ -84,6 +87,7 @@ float Timing_Get_Time_Sec()
 {
     // *** MEGN540 Lab 2 ***
     // YOUR CODE HERE
+    
     return _count_ms * 0.001 + (TCNT0*4) * 0.000001;
 }
 Time_t Timing_Get_Time()
@@ -93,6 +97,7 @@ Time_t Timing_Get_Time()
     Time_t time = {
         .millisec = _count_ms,
         .microsec = TCNT0*4  // YOU NEED TO REPLACE THIS WITH A CALL TO THE TIMER0 REGISTER AND MULTIPLY APPROPRIATELY
+        
     };
 
     return time;
@@ -112,6 +117,7 @@ uint16_t Timing_Get_Micro()
     // *** MEGN540 Lab 2 ***
     // YOUR CODE HERE
     return TCNT0*4;  // YOU NEED TO REPLACE THIS WITH A CALL TO THE TIMER0 REGISTER AND MULTIPLY APPROPRIATELY
+  
 }
 
 /**
@@ -127,6 +133,11 @@ float Timing_Seconds_Since( const Time_t* time_start_p )
     float prev_time = time_start_p->millisec * 0.001 + time_start_p->microsec * 0.000001;
     float delta_time = cur_time - prev_time;
     return delta_time;
+
+    //float diff_millisec = Timing_Get_Milli() - time_start_p->millisec;
+    //float diff_microsec = Timing_Get_Micro() - time_start_p->microsec;
+    //float delta_time = diff_millisec * 0.001 + diff_microsec * 0.000001;
+    //return delta_time;
 }
 
 /** This is the Interrupt Service Routine for the Timer0 Compare A feature.

@@ -5,7 +5,7 @@
           www.mechanical.mines.edu
 */
 
-/*
+/*js
     Copyright (c) 2023 Andrew Petruska at Colorado School of Mines
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -104,12 +104,6 @@ void Filter_SetTo( Filter_Data_t* p_filt, float amount )
     return;
 }
 
-/**
- * Function Filter_Value adds a new value to the filter and returns the new output.
- * @param p_filt pointer to the filter object
- * @param value the new measurement or value
- * @return The newly filtered value
- */
 float Filter_Value( Filter_Data_t* p_filt, float value )
 {
     rb_pop_back_F(&p_filt->in_list);

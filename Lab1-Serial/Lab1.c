@@ -69,6 +69,7 @@ int main( void )
         // Task_Message_Handling(0.0); // you'll want to uncomment once you get your serial sorted.
         // Instead of above, once you have Task_Message_Handling working, you can setup the message handling task to be managed by our task management
         Task_Run_If_Ready( &task_message_handling);
+        Task_Run_If_Ready( &task_message_handling);
 
         // Below here you'll process state-machine flags.
         Task_Run_If_Ready( &task_restart );

@@ -9,8 +9,9 @@
 /**
  * Internal counters for the Interrupts to increment or decrement as necessary.
  */
-static volatile bool _last_right_A = 0;  // Static limits it's use to this file
-static volatile bool _last_right_B = 0;  // Static limits it's use to this file
+static volatile bool _last_right_A   = 0;  // Static limits it's use to this file
+static volatile bool _last_right_B   = 0;  // Static limits it's use to this file
+static volatile bool _last_right_XOR = 0;  // Copied from the left so that they match
 
 static volatile bool _last_left_A   = 0;  // Static limits it's use to this file
 static volatile bool _last_left_B   = 0;  // Static limits it's use to this file
@@ -19,6 +20,9 @@ static volatile bool _last_left_XOR = 0;  // Necessary to check if PB4 triggered
 static volatile int32_t _left_counts  = 0;  // Static limits it's use to this file
 static volatile int32_t _right_counts = 0;  // Static limits it's use to this file
 
+// Maybe look for a better value for PI for this conversion
+float conv_encoder_rad = 1 / ( 909.7 / ( 2 * 3.141592654 ) );
+
 /** Helper Funcions for Accessing Bit Information */
 // *** MEGN540 Lab 3 TODO ***
 // Hint, use avr's bit_is_set function to help
@@ -26,10 +30,12 @@ static inline bool Right_XOR()
 {
     return PINE & ( 1 << PINE6 );
 }  // MEGN540 Lab 3 TODO
+
 static inline bool Right_B()
 {
     return PINF & ( 1 << PINF0 );
 }  // MEGN540 Lab 3 TODO
+
 static inline bool Right_A()
 {
     return Right_XOR() ^ Right_B();
@@ -39,12 +45,15 @@ static inline bool Left_XOR()
 {
     return PINB & ( 1 << PINB4 );
 }  // MEGN540 Lab 3 TODO
+
 static inline bool Left_B()
 {
     return PINE & ( 1 << PINE2 );
 }  // MEGN540 Lab 3 TODO
+
 static inline bool Left_A()
 {
+    return Left_XOR() ^ Left_B();
     return Left_XOR() ^ Left_B();
 }  // MEGN540 Lab 3 TODO
 
@@ -83,8 +92,9 @@ void Initialize_Encoders()
     sei();
 
     // Initialize static file variables. These probably need to be updated.
-    _last_right_A = 0;  // MEGN540 Lab 3 TODO
-    _last_right_B = 0;  // MEGN540 Lab 3 TODO
+    _last_right_A   = 0;  // MEGN540 Lab 3 TODO
+    _last_right_B   = 0;  // MEGN540 Lab 3 TODO
+    _last_right_XOR = 0;
 
     _last_left_A   = 0;  // MEGN540 Lab 3 TODO
     _last_left_B   = 0;  // MEGN540 Lab 3 TODO
@@ -168,7 +178,7 @@ ISR( PCINT0_vect )
 }
 
 /**
- * Interrupt Service Routine for the right Encoder.
+ * Interrupt Service Routine for the Left Encoder.
  * @return
  */
 ISR( INT6_vect )

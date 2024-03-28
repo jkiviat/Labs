@@ -399,11 +399,13 @@ void Task_Message_Handling( float _time_since_last )
                     int32_t current_enc = Encoder_Counts_Right(); //Current encoder counts
 
                     //Add the arc length (in terms of encoder counts) that must be travelled to the 
-                    //current encoder count
+                    //current encoder count to come up with the new encoder count to complete the turn
                     int32_t target = current_enc + turn_to_encoder(dist_dir.direction);
 
+                    //Set this encoder count as the new target for the right controller
                     Controller_Set_Target_Position(&right_cont, target);
 
+                    //Initialize variables that will be needed to update the controller and send PWM signals
                     int32_t updated_enc = current_enc;
                     int32_t updated_error = updated_enc - target;
                     float meas = (float)updated_enc; //Controller_Update function takes a float for the measurement

@@ -38,12 +38,16 @@
 #include "Task_Management.h"  // for clean task management with functors
 #include "Timing.h"           // for Time understanding
 #include "Controller.h"
+#include "Lab5_Tasks.h"
 
 // put your task includes and/or function declarations here for future populaion
 
 // put your global variables (only if absolutely required) here.
 static const int32_t MAX_PWM= 500;
 static const uint16_t TURN_THRESHOLD= 24; //24 ENCODER COUNTS = APPROX. 1/8"
+
+int updated_error_left = 0; //need to declare this as global. It will be modified in a function and called in the main.
+int updated_error_right = 0;
 
 // Best to identify them as "static" to make them indentified as internal and start with a "_" to identify as internal.
 // Try to initialize them if possible, so their values are never arbitrary.
@@ -62,8 +66,8 @@ void Initialize_Modules( float _time_not_used_ )
     Initialize_Battery_Monitor();
     Initialize_MotorPWM( MAX_PWM );
     //Initialize_Controller(Controller_t* p_cont, float kp, float* num, float* den, uint8_t order, float update_period)
-    Initialize_Controller(&left_cont, kp, num, den, order, update_period);
-    Initialize_Controller(&right_cont, kp, num, den, order, update_period);
+    Initialize_Controller(&left_cont, kp_left, num_left, den_left, order, update_period);
+    Initialize_Controller(&right_cont, kp_right, num_right, den_right, order, update_period);
 
     // Setup task handling
     Initialize_Task( &task_restart, &Initialize_Modules /*function pointer to call*/ );
@@ -92,9 +96,10 @@ void Initialize_Modules( float _time_not_used_ )
     Initialize_Task( &send_system_id_info, &Send_System_ID );
 
     //Lab 5 tasks
-    Initialize_Task(&task_update_controller_left, &Controller_Update);
-    Initialize_Task(&task_update_controller_right, &Controller_Update);
-
+    Initialize_Task(&task_update_controller_left, &send_left_controller_update);
+    Initialize_Task(&task_update_controller_right, &send_right_controller_update);
+    Initialize_Task(&task_set_pwm_zero_left, &Set_PWM_Zero_Left);
+    Initialize_Task(&task_set_pwm_zero_right, &Set_PWM_Zero_Right);
 }
 
 /** Main program entry point. This routine configures the hardware required by the application, then
@@ -130,11 +135,18 @@ int main( void )
         Task_Run_If_Ready (&task_update_controller_left);
         Task_Run_If_Ready (&task_update_controller_right);
 
-        while(ABS(updated_error > TURN_THRESHOLD)){
+        //If encoder count reaches the target, cancel the controller update task and set PWM to zero for that motor
+        updated_error_left = Encoder_Counts_Left() - round(Get_Controller_Target(&left_cont));
+        while(ABS(TURN_THRESHOLD > updated_error_left)){
             Task_Cancel( &task_update_controller_left );
-            Task_Cancel( &task_update_controller_right );
-            Task_Activate( &task_set_pwm_zero, -1.0 );
+            Task_Activate( &task_set_pwm_zero_left, -1.0 );
         }
+        updated_error_right = Encoder_Counts_Right() - round(Get_Controller_Target(&right_cont));
+        while(ABS(TURN_THRESHOLD > updated_error_right)){
+            Task_Cancel( &task_update_controller_right );
+            Task_Activate( &task_set_pwm_zero_right, -1.0 );
+        }
+
 
     }
 }
