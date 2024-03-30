@@ -66,5 +66,7 @@ void Set_Left_Motor(int16_t left);
 void Set_PWM_Zero_Left( float _time_since_last );
 void Set_PWM_Zero_Right( float _time_since_last );
 float Get_Controller_Target(Controller_t* p_cont);
+int32_t Set_Encoder_Target_Right(int32_t current_encoder_count, float dist, float angle);
+int32_t Set_Encoder_Target_Left(int32_t current_encoder_count, float dist, float angle);
 
 #endif  // ifndef LAB5_TASKS_H

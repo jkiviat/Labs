@@ -12,8 +12,11 @@ static const float track_sep= 3.858f;
 //Linear distance travelled per rotation: (2*pi*0.765 inches)
 //Linear distance per encoder count: (2*pi*0.765)/909.7 inches
 static const float dist_per_count = ((2*M_PI*0.765)/909.7);
+static const float count_per_dist = 909.7/(2*M_PI*0.765);
 
 static const float half_rot_dist = M_PI*3.858; //circumference = 2*pi*r. Travelling half the circumference = pi*r
+
+static const float deg_to_rad = M_PI/180.0;
 
 //Return the encoder count to serve as the target for the Controller_Update function
 int distance_to_encoder(float distance){
@@ -151,14 +154,16 @@ int32_t turn_to_encoder(float direction){
 //It will update the controller and call the Set_PWM function based on the signal.
 //One of its arguments must be the controller struct (left or right) to update
 //It will be deactivated in the main loop when the encoder count is close enough to its target
-float send_right_controller_update(Controller_t* p_cont, float dt){
-    //float Controller_Update( Controller_t* p_cont, float measurement, float dt )
-
-    /*while(ABS(updated_error > 24)){ //Encoder count of 24 correlates to 1/8 inch
-*/
+float send_right_controller_update(Controller_t* p_cont, float dt, float dist, float angle){
+   
+    //Retrieve the current encoder counts, calculate the new target encoder count from the user input dist and angle
+    //set that new target to the controller struct
     float meas = (float)Encoder_Counts_Right();
+    int32_t current_encoder_count = Encoder_Counts_Right();
+    float target_enc = Set_Encoder_Target_Right(current_encoder_count, dist, angle);
+    Controller_Set_Target_Position(p_cont, target_enc);
 
-    //Need to call the controller that was initialized, that was passed into this function (done in the main.c)
+    //filter the encoder counts that have been measured to eliminate noise
     float u = Controller_Update(p_cont, meas, dt);
     u = Saturate(u,MAX_PWM);
     int16_t input_sig = round(u);
@@ -166,19 +171,20 @@ float send_right_controller_update(Controller_t* p_cont, float dt){
 
 }
 
-float send_left_controller_update(Controller_t* p_cont, float dt){
-    //float Controller_Update( Controller_t* p_cont, float measurement, float dt )
+float send_left_controller_update(Controller_t* p_cont, float dt, float dist, float angle){
+    
+    //Retrieve the current encoder counts, calculate the new target encoder count from the user input dist and angle
+    //set that new target to the controller struct
+    float meas = (float)Encoder_Counts_Left();
+    int32_t current_encoder_count = Encoder_Counts_Left();
+    float target_enc = Set_Encoder_Target_Left(current_encoder_count, dist, angle);
+    Controller_Set_Target_Position(p_cont, target_enc);
 
-    /*while(ABS(updated_error > 24)){ //Encoder count of 24 correlates to 1/8 inch
-*/
-    float meas = (float)Encoder_Counts_Right();
-
-    //Need to call the controller that was initialized, that was passed into this function (done in the main.c)
+    //filter the encoder counts that have been measured to eliminate noise
     float u = Controller_Update(p_cont, meas, dt);
     u = Saturate(u,MAX_PWM);
     int16_t input_sig = round(u);
     Set_Left_Motor(input_sig); 
-
     
 
 }
@@ -252,4 +258,33 @@ float Get_Controller_Target(Controller_t* p_cont){
     }
 
     return target;
+}
+
+
+//This function takes the current encoder count and the desired distance and direction (in angles)
+int32_t Set_Encoder_Target_Right(int32_t current_encoder_count, float dist, float angle){
+
+    //arc length = angle(in radians)*radius. radius = track_sep/2. 
+    int32_t angle_enc = round(angle*(deg_to_rad)*(track_sep/2)*count_per_dist);
+
+    int32_t straight_dist_enc = round(dist*count_per_dist);
+
+    int32_t target_encoder_count = straight_dist_enc + angle_enc;
+
+    return target_encoder_count;
+
+}
+
+//This function takes the current encoder count and the desired distance and direction (in angles)
+int32_t Set_Encoder_Target_Left(int32_t current_encoder_count, float dist, float angle){
+
+    //arc length = angle(in radians)*radius. radius = track_sep/2. 
+    int32_t angle_enc = round(angle*(deg_to_rad)*(track_sep/2)*count_per_dist);
+
+    int32_t straight_dist_enc = round(dist*count_per_dist);
+
+    int32_t target_encoder_count = straight_dist_enc - angle_enc;
+
+    return target_encoder_count;
+
 }

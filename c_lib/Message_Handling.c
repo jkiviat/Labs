@@ -388,50 +388,43 @@ void Task_Message_Handling( float _time_since_last )
 
                 USB_Msg_Read_Into( &dist_dir, sizeof( dist_dir ) );
 
+                Task_Activate(&task_update_controller_right, update_period);
+                Task_Activate(&task_update_controller_left, update_period);
+
                 //Determine whether the turn is to the left or right
                 //It is necessary to calculate this here because there are seperate functions and 
                 //structs for the left and right motors, and we need to know which motor to activate
 
-                bool left = determine_direction(dist_dir.direction); //Returns "true" if it is a left turn
+                //Retrieve encoder counts
+                //int32_t cur_enc_left = Encoder_Counts_Left();
+                //int32_t cur_enc_right = Encoder_Counts_Right();
 
-                if (left == true){
+                //Set_Encoder_Target_Right(int32_t current_encoder_count, float dist, float angle)
 
-                    int32_t current_enc = Encoder_Counts_Right(); //Current encoder counts
+                //bool left = determine_direction(dist_dir.direction); //Returns "true" if it is a left turn
+
+                //if (left == true){
+
+                   // int32_t current_enc = Encoder_Counts_Right(); //Current encoder counts
 
                     //Add the arc length (in terms of encoder counts) that must be travelled to the 
                     //current encoder count to come up with the new encoder count to complete the turn
-                    int32_t target = current_enc + turn_to_encoder(dist_dir.direction);
+                   // int32_t target = current_enc + turn_to_encoder(dist_dir.direction);
 
                     //Set this encoder count as the new target for the right controller
-                    Controller_Set_Target_Position(&right_cont, target);
+                    //Controller_Set_Target_Position(&right_cont, target);
 
                     //Initialize variables that will be needed to update the controller and send PWM signals
-                    int32_t updated_enc = current_enc;
-                    int32_t updated_error = updated_enc - target;
-                    float meas = (float)updated_enc; //Controller_Update function takes a float for the measurement
+                    //int32_t updated_enc = current_enc;
+                    //int32_t updated_error = updated_enc - target;
+                    //float meas = (float)updated_enc; //Controller_Update function takes a float for the measurement
 
                     //Activate the right controller at intervals specified by the update period
-                    Task_Activate(&task_update_controller_right, update_period);
+                    //Task_Activate(&task_update_controller_right, update_period);
                     //In the main loop, want to deactivate the task and turn off the motor when the target
                     //has been reached.
 
-                    /*while(ABS(updated_error > 24)){ //Encoder count of 24 correlates to 1/8 inch
-
-                        float meas = (float)updated_enc;
-                        float u = Controller_Update(&right_cont, meas, update_period);
-                        u = Saturate(u,MAX_PWM);
-                        int16_t input_sig = round(u);
-
-                        Set_Motor_Values(0,input_sig);
-
-
-                        updated_enc = Encoder_Counts_Right(); 
-                        updated_error = updated_enc - target;
-
-                    }
-                    */
-                    //float u = Controller_Update(&right_cont, meas, update_period);
-                }
+                //}
 
                 //Controller_update 
                 //Set_Motor_Values( pwm_values.left, pwm_values.right );
