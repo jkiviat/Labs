@@ -49,18 +49,29 @@
 // message handeling and the Lab main loops.
 // e.g. void Send_Time_Now( float _time_since_last );
 
-Task_t task_update_controller_left;
-Task_t task_update_controller_right;
+//this is the number of encoder counts from the target that will trigger the motor to stop
+//24 ENCODER COUNTS = APPROX. 1/8"
+int32_t target_threshold = 24; 
+float count_per_inch = 909.7/(2*M_PI*0.765);
+
+Task_t task_update_controller_left_pos;
+Task_t task_update_controller_right_pos;
+Task_t task_update_controller_left_vel;
+Task_t task_update_controller_right_vel;
 Task_t task_set_pwm_zero_left;
 Task_t task_set_pwm_zero_right;
+Task_t task_terminate_controller_left;
+Task_t task_terminate_controller_right;
 
 int distance_to_encoder(float distance);
-int direction_to_encoder(float direction);
-void drive_dist_and_direction(Controller_t* p_cont, float distance, float direction);
-int turn_to_encoder(float direction);
-bool determine_direction(float direction);
-float send_right_controller_update(Controller_t* p_cont, float dt);
-float send_left_controller_update(Controller_t* p_cont, float dt);
+
+//int direction_to_encoder(float direction);
+//void drive_dist_and_direction(Controller_t* p_cont, float distance, float direction);
+//int turn_to_encoder(float direction);
+//bool determine_direction(float direction);
+
+float send_right_controller_update_pos();
+float send_left_controller_update_pos();
 void Set_Right_Motor(int16_t right);
 void Set_Left_Motor(int16_t left);
 void Set_PWM_Zero_Left( float _time_since_last );
@@ -68,5 +79,11 @@ void Set_PWM_Zero_Right( float _time_since_last );
 float Get_Controller_Target(Controller_t* p_cont);
 int32_t Set_Encoder_Target_Right(int32_t current_encoder_count, float dist, float angle);
 int32_t Set_Encoder_Target_Left(int32_t current_encoder_count, float dist, float angle);
+void Terminate_Controller_Left(float time);
+void Terminate_Controller_Right(float time);
+float Set_Target_Velocity_Left(float linear_vel, float angular_vel);
+float Set_Target_Velocity_Right(float linear_vel, float angular_vel);
+float send_right_controller_update_vel();
+float send_left_controller_update_vel();
 
 #endif  // ifndef LAB5_TASKS_H

@@ -388,8 +388,15 @@ void Task_Message_Handling( float _time_since_last )
 
                 USB_Msg_Read_Into( &dist_dir, sizeof( dist_dir ) );
 
-                Task_Activate(&task_update_controller_right, update_period);
-                Task_Activate(&task_update_controller_left, update_period);
+                //Set the targeted encoder counts, based on the user-input distance and direction
+                int32_t target_enc_left = Set_Encoder_Target_Left(Encoder_Counts_Left(), dist_dir.distance, dist_dir.direction);
+                int32_t target_enc_right = Set_Encoder_Target_Right(Encoder_Counts_Right(), dist_dir.distance, dist_dir.direction);
+
+                Controller_Set_Target_Position(&left_cont, target_enc_left); //Controller_Set_Target_Position takes a float while this is an int32_t
+                Controller_Set_Target_Position(&right_cont, target_enc_right); //Controller_Set_Target_Position takes a float while this is an int32_t
+
+                Task_Activate(&task_update_controller_right_pos, update_period);
+                Task_Activate(&task_update_controller_left_pos, update_period);
 
                 //Determine whether the turn is to the left or right
                 //It is necessary to calculate this here because there are seperate functions and 
@@ -425,14 +432,94 @@ void Task_Message_Handling( float _time_since_last )
                     //has been reached.
 
                 //}
+                command_processed = true;
+            }
+            break;
 
-                //Controller_update 
-                //Set_Motor_Values( pwm_values.left, pwm_values.right );
+        case 'D':
+            if( USB_Msg_Length() >= _Message_Length( 'D' ) ) {
+                USB_Msg_Get();
+
+                struct __attribute__( ( __packed__ ) ) {
+                    float distance;
+                    float direction;
+                    float time;
+                } dist_dir;
+
+                USB_Msg_Read_Into( &dist_dir, sizeof( dist_dir ) );
+
+                //Set the targeted encoder counts, based on the user-input distance and direction
+                int32_t target_enc_left = Set_Encoder_Target_Left(Encoder_Counts_Left(), dist_dir.distance, dist_dir.direction);
+                int32_t target_enc_right = Set_Encoder_Target_Right(Encoder_Counts_Right(), dist_dir.distance, dist_dir.direction);
+
+                Controller_Set_Target_Position(&left_cont, target_enc_left); //Controller_Set_Target_Position takes a float while this is an int32_t
+                Controller_Set_Target_Position(&right_cont, target_enc_right); //Controller_Set_Target_Position takes a float while this is an int32_t
+
+                Task_Activate(&task_update_controller_right_pos, update_period);
+                Task_Activate(&task_update_controller_left_pos, update_period);
+
+                Task_Activiate(&task_terminate_controller_left, dist_dir.time);
+                Task_Activiate(&task_terminate_controller_right, dist_dir.time);
+    
+                command_processed = true;
+            }
+            break;
+
+        case 'v':
+            if( USB_Msg_Length() >= _Message_Length( 'v' ) ) {
+                USB_Msg_Get();
+
+                struct __attribute__( ( __packed__ ) ) {
+                    float linear_velocity;
+                    float angular_velocity;
+                } velocity;
+
+                USB_Msg_Read_Into( &velocity, sizeof( velocity ) );
+
+                //Calculate the velocities of the left and right tracks, based on the user-input linear and angular velocity
+                float target_vel_left = Set_Target_Velocity_Left(velocity.linear_velocity, velocity.angular_velocity);
+                float target_vel_right = Set_Target_Velocity_Right(velocity.linear_velocity, velocity.angular_velocity);
+
+                //Put controllers in velocity mode
+                Controller_Set_Target_Velocity(&left_cont, target_vel_left);
+                Controller_Set_Target_Velocity(&right_cont, target_vel_right);
+
+                Task_Activate(&task_update_controller_right_vel, update_period);
+                Task_Activate(&task_update_controller_left_vel, update_period);
 
                 command_processed = true;
             }
             break;
 
+        case 'V':
+            if( USB_Msg_Length() >= _Message_Length( 'V' ) ) {
+                USB_Msg_Get();
+
+                struct __attribute__( ( __packed__ ) ) {
+                    float linear_velocity;
+                    float angular_velocity;
+                    float time;
+                } velocity;
+
+                USB_Msg_Read_Into( &velocity, sizeof( velocity ) );
+
+                //Calculate the velocities of the left and right tracks, based on the user-input linear and angular velocity
+                float target_vel_left = Set_Target_Velocity_Left(velocity.linear_velocity, velocity.angular_velocity);
+                float target_vel_right = Set_Target_Velocity_Right(velocity.linear_velocity, velocity.angular_velocity);
+
+                //Put controllers in velocity mode
+                Controller_Set_Target_Velocity(&left_cont, target_vel_left);
+                Controller_Set_Target_Velocity(&right_cont, target_vel_right);
+
+                Task_Activate(&task_update_controller_right_vel, update_period);
+                Task_Activate(&task_update_controller_left_vel, update_period);
+
+                Task_Activiate(&task_terminate_controller_left, velocity.time);
+                Task_Activiate(&task_terminate_controller_right, velocity.time);
+
+                command_processed = true;
+            }
+            break;
 
 
         default:

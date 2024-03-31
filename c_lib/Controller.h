@@ -55,7 +55,7 @@ float kp_right = 1.2641; //THESE MUST BE UPDATED
 //float alpha_right = 1.0000; //THESE MUST BE UPDATED
 
 uint8_t order = 3;
-float update_period = .001; //1 kHz
+float update_period = .050; //units: seconds
 
 typedef struct { Filter_Data_t controller; float kp; float target_pos; float target_vel; float update_period;} Controller_t;
 

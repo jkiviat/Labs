@@ -1,5 +1,5 @@
 #include "Controller.h"
-
+#include "Lab5_Tasks.h"
 
 /**
  * Function Initialize_Controller sets up the z-transform based controller for the system.
@@ -30,6 +30,21 @@ void Controller_Set_Target_Velocity( Controller_t* p_cont, float vel ){
  */
 void Controller_Set_Target_Position( Controller_t* p_cont, float vel ){
     //NEEDS TO BE CONVERTED TO ENCODER SPACE BEFORE PASSING VALUE INTO THIS FUNCTION
+    /*
+    int32_t Set_Encoder_Target_Right(int32_t current_encoder_count, float dist, float angle){
+
+    //arc length = angle(in radians)*radius. radius = track_sep/2. 
+    int32_t angle_enc = round(angle*(deg_to_rad)*(track_sep/2)*count_per_dist);
+
+    int32_t straight_dist_enc = round(dist*count_per_dist);
+
+    int32_t target_encoder_count = straight_dist_enc + angle_enc;
+
+    return target_encoder_count;
+}
+    
+    */
+    
     p_cont -> target_vel = 0;
     p_cont -> target_pos = vel;
     
@@ -42,26 +57,20 @@ void Controller_Set_Target_Position( Controller_t* p_cont, float vel ){
 float Controller_Update( Controller_t* p_cont, float measurement, float dt ){
 
     //***IF TARGET VELOCITY IS ZERO, USE POSITION AS TARGET
-    //Error serves as the "input list"
     float target;
     if(p_cont -> target_vel != 0){
-        target = p_cont -> target_vel; //TARGET ENCODER VALUE
-
+        target = p_cont -> target_vel; 
+        //update targeted encoder count for velocity mode
+        int32_t target = measurement + round((target*count_per_inch*update_period));
     } else {
-        target = p_cont -> target_pos; //convert this to encoder count?
-        //measurement plus distance
+        target = p_cont -> target_pos; //
     }
 
-    //Filter_Data_t* ptr_to_filt = &(p_cont -> controller);
-
-    //float output_this = (rb_get_F(&ptr_to_filt -> numerator,0))*;
-    //float error = measurement - target;
     float output = Filter_Value(&p_cont -> controller, measurement);
-    //float error = target - measurement;
-    //float output = (measurement - target)*
-    float u = (p_cont -> kp)*(target - output);
-    return u;
 
+    float u = (p_cont -> kp)*(target - output);
+
+    return u;
 }
 
 /**

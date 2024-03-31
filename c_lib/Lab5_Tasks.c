@@ -11,8 +11,8 @@ static const float track_sep= 3.858f;
 //909.7 counts per rotation
 //Linear distance travelled per rotation: (2*pi*0.765 inches)
 //Linear distance per encoder count: (2*pi*0.765)/909.7 inches
-static const float dist_per_count = ((2*M_PI*0.765)/909.7);
-static const float count_per_dist = 909.7/(2*M_PI*0.765);
+static const float inch_per_count = ((2*M_PI*0.765)/909.7);
+//static const float count_per_inch = 909.7/(2*M_PI*0.765);
 
 static const float half_rot_dist = M_PI*3.858; //circumference = 2*pi*r. Travelling half the circumference = pi*r
 
@@ -21,12 +21,12 @@ static const float deg_to_rad = M_PI/180.0;
 //Return the encoder count to serve as the target for the Controller_Update function
 int distance_to_encoder(float distance){
     //need to round to nearest int (encoder count)
-    int target_count = round(dist_per_count*distance);
+    int target_count = round(inch_per_count*distance);
 
     return target_count;
 }
 
-
+/*
 //Return the encoder count to serve as the target for the Controller_Update function
 int direction_to_encoder(float direction){
 
@@ -149,44 +149,48 @@ int32_t turn_to_encoder(float direction){
     return target_count;
     //return turn_target;
 }
+*/
 
 //This function is linked to the task that will update the controller at the specified discretization interval.
 //It will update the controller and call the Set_PWM function based on the signal.
-//One of its arguments must be the controller struct (left or right) to update
-//It will be deactivated in the main loop when the encoder count is close enough to its target
-float send_right_controller_update(Controller_t* p_cont, float dt, float dist, float angle){
+//It will be deactivated when the encoder count is close enough to its target
+float send_right_controller_update_pos(){
    
-    //Retrieve the current encoder counts, calculate the new target encoder count from the user input dist and angle
-    //set that new target to the controller struct
     float meas = (float)Encoder_Counts_Right();
-    int32_t current_encoder_count = Encoder_Counts_Right();
-    float target_enc = Set_Encoder_Target_Right(current_encoder_count, dist, angle);
-    Controller_Set_Target_Position(p_cont, target_enc);
 
     //filter the encoder counts that have been measured to eliminate noise
-    float u = Controller_Update(p_cont, meas, dt);
+    float u = Controller_Update(&right_cont, meas, update_period);
     u = Saturate(u,MAX_PWM);
     int16_t input_sig = round(u);
     Set_Right_Motor(input_sig); 
 
+    //Cancel the task if the encoder counts are within the targeted threshold 
+   int32_t updated_error_right = Encoder_Counts_Right() - round(Get_Controller_Target(&right_cont));
+   while(ABS(target_threshold > updated_error_right)){
+        Task_Cancel( &task_update_controller_right_pos );
+        Task_Activate( &task_set_pwm_zero_right, -1.0 );
+   }
 }
 
-float send_left_controller_update(Controller_t* p_cont, float dt, float dist, float angle){
+//This function is linked to the task that will update the controller at the specified discretization interval.
+//It will update the controller and call the Set_PWM function based on the signal.
+//It will be deactivated when the encoder count is close enough to its target
+float send_left_controller_update_pos(){
     
-    //Retrieve the current encoder counts, calculate the new target encoder count from the user input dist and angle
-    //set that new target to the controller struct
     float meas = (float)Encoder_Counts_Left();
-    int32_t current_encoder_count = Encoder_Counts_Left();
-    float target_enc = Set_Encoder_Target_Left(current_encoder_count, dist, angle);
-    Controller_Set_Target_Position(p_cont, target_enc);
 
     //filter the encoder counts that have been measured to eliminate noise
-    float u = Controller_Update(p_cont, meas, dt);
+    float u = Controller_Update(&left_cont, meas, update_period); //***UPDATE_PERIOD WAS DECLARED IN CONTROLLER.H
     u = Saturate(u,MAX_PWM);
     int16_t input_sig = round(u);
     Set_Left_Motor(input_sig); 
-    
 
+    //Cancel the task if the encoder counts are within the targeted threshold 
+   int32_t updated_error_left = Encoder_Counts_Left() - round(Get_Controller_Target(&left_cont));
+   while(ABS(target_threshold > updated_error_left)){
+        Task_Cancel( &task_update_controller_left_pos );
+        Task_Activate( &task_set_pwm_zero_left, -1.0 );
+   }
 }
 
 void Set_Right_Motor(int16_t right)
@@ -251,10 +255,8 @@ float Get_Controller_Target(Controller_t* p_cont){
     float target;
     if(p_cont -> target_vel != 0){
         target = p_cont -> target_vel; //TARGET ENCODER VALUE
-
     } else {
         target = p_cont -> target_pos; //
-        
     }
 
     return target;
@@ -264,12 +266,15 @@ float Get_Controller_Target(Controller_t* p_cont){
 //This function takes the current encoder count and the desired distance and direction (in angles)
 int32_t Set_Encoder_Target_Right(int32_t current_encoder_count, float dist, float angle){
 
+    //find arc length in terms of encoder counts
     //arc length = angle(in radians)*radius. radius = track_sep/2. 
-    int32_t angle_enc = round(angle*(deg_to_rad)*(track_sep/2)*count_per_dist);
+    int32_t angle_enc = round(angle*(deg_to_rad)*(track_sep/2)*count_per_inch);
 
-    int32_t straight_dist_enc = round(dist*count_per_dist);
+    //find straight distance in terms of encoder counts
+    int32_t straight_dist_enc = round(dist*count_per_inch);
 
-    int32_t target_encoder_count = straight_dist_enc + angle_enc;
+    //Add the length of the turn and the straight distance in terms of encoder counts (CCW turn convention)
+    int32_t target_encoder_count = (straight_dist_enc + angle_enc) + current_encoder_count;
 
     return target_encoder_count;
 
@@ -278,13 +283,93 @@ int32_t Set_Encoder_Target_Right(int32_t current_encoder_count, float dist, floa
 //This function takes the current encoder count and the desired distance and direction (in angles)
 int32_t Set_Encoder_Target_Left(int32_t current_encoder_count, float dist, float angle){
 
+    //find arc length in terms of encoder counts
     //arc length = angle(in radians)*radius. radius = track_sep/2. 
-    int32_t angle_enc = round(angle*(deg_to_rad)*(track_sep/2)*count_per_dist);
+    int32_t angle_enc = round(angle*(deg_to_rad)*(track_sep/2)*count_per_inch);
 
-    int32_t straight_dist_enc = round(dist*count_per_dist);
+    //find straight distance in terms of encoder counts
+    int32_t straight_dist_enc = round(dist*count_per_inch);
 
-    int32_t target_encoder_count = straight_dist_enc - angle_enc;
+    //Subtract the length of the turn and the straight distance in terms of encoder counts (CCW turn convention)
+    int32_t target_encoder_count = (straight_dist_enc - angle_enc) + current_encoder_count;
 
     return target_encoder_count;
+}
 
+
+//This function stops the motor and cancels the controller update task after the time limit has been reached
+void Terminate_Controller_Left(float time){
+
+    MotorPWM_Set_Left( 0 );
+    Task_Cancel( &task_update_controller_left_pos);
+    
+}
+
+void Terminate_Controller_Right(float time){
+
+    MotorPWM_Set_Right( 0 );
+    Task_Cancel( &task_update_controller_right_pos);
+    
+}
+
+float Set_Target_Velocity_Left(float linear_vel, float angular_vel){
+
+    float target_vel_left = linear_vel - (angular_vel*track_sep/2);
+
+    return target_vel_left;
+
+}
+
+float Set_Target_Velocity_Right(float linear_vel, float angular_vel){
+
+    float target_vel_right = linear_vel + (angular_vel*track_sep/2);
+
+    return target_vel_right;
+
+}
+
+//Target vel argument is in inches per second
+float send_right_controller_update_vel(){
+   
+    float meas = (float)Encoder_Counts_Right();
+
+    float target_vel = Get_Controller_Target(&right_cont);
+
+    //target_vel: inches per second. dt: seconds. count_per_inch: encoder counts per inch. Result is encoder counts
+    //int32_t target_enc_pos = Encoder_Counts_Right() + (target_vel*count_per_inch*update_period);
+    //filter the encoder counts that have been measured to eliminate noise
+    float u = Controller_Update(&right_cont, meas, update_period);
+    u = Saturate(u,MAX_PWM);
+    int16_t input_sig = round(u);
+    Set_Right_Motor(input_sig); 
+
+    //Cancel the task if the encoder counts are within the targeted threshold 
+   int32_t updated_error_right = Encoder_Counts_Right() - round(Get_Controller_Target(&right_cont));
+   while(ABS(target_threshold > updated_error_right)){
+        Task_Cancel( &task_update_controller_right_pos );
+        Task_Activate( &task_set_pwm_zero_right, -1.0 );
+   }
+}
+
+//Target vel argument is in inches per second
+float send_left_controller_update_vel(){
+   
+    float meas = (float)Encoder_Counts_Left();
+
+    float target_vel = Get_Controller_Target(&left_cont);
+
+    //target_vel: inches per second. dt: seconds. count_per_inch: encoder counts per inch. Result is encoder counts
+    //int32_t target_enc_pos = Encoder_Counts_Right() + (target_vel*count_per_inch*update_period);
+    //filter the encoder counts that have been measured to eliminate noise
+    float u = Controller_Update(&left_cont, meas, update_period);
+    u = Saturate(u,MAX_PWM);
+    int16_t input_sig = round(u);
+    Set_Left_Motor(input_sig); 
+
+    //Cancel the task if the encoder counts are within the targeted threshold 
+   int32_t updated_error_left = Encoder_Counts_Left() - round(Get_Controller_Target(&left_cont));
+   while(ABS(target_threshold > updated_error_left)){
+        Task_Cancel( &task_update_controller_left_pos );
+        Task_Activate( &task_set_pwm_zero_left, -1.0 );
+   }
 }
