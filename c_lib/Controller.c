@@ -61,7 +61,7 @@ float Controller_Update( Controller_t* p_cont, float measurement, float dt ){
     if(p_cont -> target_vel != 0){
         target = p_cont -> target_vel; 
         //update targeted encoder count for velocity mode
-        int32_t target = measurement + round((target*count_per_inch*update_period));
+        int32_t target = measurement + round((target*count_per_inch*dt));
     } else {
         target = p_cont -> target_pos; //
     }
@@ -121,7 +121,6 @@ void Controller_SetTo(Controller_t* p_cont, float measurement ){
 void Controller_ShiftBy(Controller_t* p_cont, float measurement ){
 
     /*
-    /**
  * Function Filter_ShiftBy shifts the input list and output list to keep the filter in the same frame. This especially
  * useful when initializing the filter to the current value or handling wrapping/overflow issues.
  * @param p_filt

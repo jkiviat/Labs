@@ -43,7 +43,7 @@
 //Left Controller Parameters
 float num_left[] = {65.03, -65.03}; //THESE MUST BE UPDATED
 float den_left[] = {1, -0.9853}; //THESE MUST BE UPDATED
-float static kp_left = 1.2641; //THESE MUST BE UPDATED
+float kp_left = 1.2641; //THESE MUST BE UPDATED
 //float static kd_left = 1.0000; //THESE MUST BE UPDATED
 //float static alpha_left = 1.0000; //THESE MUST BE UPDATED
 
@@ -55,7 +55,7 @@ float kp_right = 1.2641; //THESE MUST BE UPDATED
 //float alpha_right = 1.0000; //THESE MUST BE UPDATED
 
 uint8_t order = 3;
-float update_period = .050; //units: seconds
+float controller_update_interval = .050; //units: seconds
 
 typedef struct { Filter_Data_t controller; float kp; float target_pos; float target_vel; float update_period;} Controller_t;
 

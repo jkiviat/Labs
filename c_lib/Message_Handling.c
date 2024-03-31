@@ -395,8 +395,8 @@ void Task_Message_Handling( float _time_since_last )
                 Controller_Set_Target_Position(&left_cont, target_enc_left); //Controller_Set_Target_Position takes a float while this is an int32_t
                 Controller_Set_Target_Position(&right_cont, target_enc_right); //Controller_Set_Target_Position takes a float while this is an int32_t
 
-                Task_Activate(&task_update_controller_right_pos, update_period);
-                Task_Activate(&task_update_controller_left_pos, update_period);
+                Task_Activate(&task_update_controller_right_pos, (&right_cont) -> update_period);
+                Task_Activate(&task_update_controller_left_pos, (&left_cont) -> update_period);
 
                 //Determine whether the turn is to the left or right
                 //It is necessary to calculate this here because there are seperate functions and 
@@ -455,11 +455,16 @@ void Task_Message_Handling( float _time_since_last )
                 Controller_Set_Target_Position(&left_cont, target_enc_left); //Controller_Set_Target_Position takes a float while this is an int32_t
                 Controller_Set_Target_Position(&right_cont, target_enc_right); //Controller_Set_Target_Position takes a float while this is an int32_t
 
-                Task_Activate(&task_update_controller_right_pos, update_period);
-                Task_Activate(&task_update_controller_left_pos, update_period);
+                //Task_Activiate(&task_terminate_controller_left, dist_dir.time);
+                //Task_Activiate(&task_terminate_controller_right, dist_dir.time);
 
-                Task_Activiate(&task_terminate_controller_left, dist_dir.time);
-                Task_Activiate(&task_terminate_controller_right, dist_dir.time);
+                if( dist_dir.time > 0 ) {
+                    Task_Activate(&task_update_controller_right_pos, (&right_cont) -> update_period);
+                    Task_Activate(&task_update_controller_left_pos, (&left_cont) -> update_period);
+                } else {
+                    Task_Cancel( &task_update_controller_right_pos );
+                    Task_Cancel( &task_update_controller_left_pos );
+                }
     
                 command_processed = true;
             }
@@ -484,8 +489,8 @@ void Task_Message_Handling( float _time_since_last )
                 Controller_Set_Target_Velocity(&left_cont, target_vel_left);
                 Controller_Set_Target_Velocity(&right_cont, target_vel_right);
 
-                Task_Activate(&task_update_controller_right_vel, update_period);
-                Task_Activate(&task_update_controller_left_vel, update_period);
+                Task_Activate(&task_update_controller_right_vel, (&right_cont) -> update_period);
+                Task_Activate(&task_update_controller_left_vel, (&left_cont) -> update_period);
 
                 command_processed = true;
             }
@@ -511,11 +516,16 @@ void Task_Message_Handling( float _time_since_last )
                 Controller_Set_Target_Velocity(&left_cont, target_vel_left);
                 Controller_Set_Target_Velocity(&right_cont, target_vel_right);
 
-                Task_Activate(&task_update_controller_right_vel, update_period);
-                Task_Activate(&task_update_controller_left_vel, update_period);
+                if( velocity.time > 0 ) {
+                    Task_Activate(&task_update_controller_right_vel, (&right_cont) -> update_period);
+                    Task_Activate(&task_update_controller_left_vel, (&left_cont) -> update_period);
+                } else {
+                    Task_Cancel( &task_update_controller_right_vel );
+                    Task_Cancel( &task_update_controller_left_vel );
+                }
 
-                Task_Activiate(&task_terminate_controller_left, velocity.time);
-                Task_Activiate(&task_terminate_controller_right, velocity.time);
+                //Task_Activiate(&task_terminate_controller_left, velocity.time);
+                //Task_Activiate(&task_terminate_controller_right, velocity.time);
 
                 command_processed = true;
             }

@@ -46,6 +46,7 @@
 #include "Lab5_Tasks.h"
 #include "Controller.h"
 #include "MotorPWM.h"
+#include "Task_Management.h"
 
 int32_t updated_error;
 int32_t updated_enc;
@@ -53,6 +54,8 @@ int32_t target;
 int32_t current_enc;
 float meas;
 float u;
+
+//extern void Task_Activate( Task_t* task, float run_period );
 
 /**
  * Function Task_Message_Handling processes USB messages as necessary and sets status flags to control the flow of the program.

@@ -1,5 +1,6 @@
 #include "Lab5_Tasks.h"
 #include <math.h>
+#include <stdlib.h>
 
 
 //axis of wheel to outer surface of track: 0.765 inches
@@ -154,19 +155,21 @@ int32_t turn_to_encoder(float direction){
 //This function is linked to the task that will update the controller at the specified discretization interval.
 //It will update the controller and call the Set_PWM function based on the signal.
 //It will be deactivated when the encoder count is close enough to its target
-float send_right_controller_update_pos(){
+void send_right_controller_update_pos(){
    
     float meas = (float)Encoder_Counts_Right();
 
     //filter the encoder counts that have been measured to eliminate noise
-    float u = Controller_Update(&right_cont, meas, update_period);
+    float update_interval = ((&right_cont) -> update_period);
+    float u = Controller_Update(&right_cont, meas, update_interval);
     u = Saturate(u,MAX_PWM);
     int16_t input_sig = round(u);
     Set_Right_Motor(input_sig); 
 
     //Cancel the task if the encoder counts are within the targeted threshold 
    int32_t updated_error_right = Encoder_Counts_Right() - round(Get_Controller_Target(&right_cont));
-   while(ABS(target_threshold > updated_error_right)){
+   updated_error_right = sabs(updated_error_right);
+   while(target_threshold > updated_error_right){
         Task_Cancel( &task_update_controller_right_pos );
         Task_Activate( &task_set_pwm_zero_right, -1.0 );
    }
@@ -175,19 +178,21 @@ float send_right_controller_update_pos(){
 //This function is linked to the task that will update the controller at the specified discretization interval.
 //It will update the controller and call the Set_PWM function based on the signal.
 //It will be deactivated when the encoder count is close enough to its target
-float send_left_controller_update_pos(){
+void send_left_controller_update_pos(){
     
     float meas = (float)Encoder_Counts_Left();
 
     //filter the encoder counts that have been measured to eliminate noise
-    float u = Controller_Update(&left_cont, meas, update_period); //***UPDATE_PERIOD WAS DECLARED IN CONTROLLER.H
+    float update_interval = ((&left_cont) -> update_period);
+    float u = Controller_Update(&left_cont, meas, update_interval); //***UPDATE_PERIOD WAS DECLARED IN CONTROLLER.H
     u = Saturate(u,MAX_PWM);
     int16_t input_sig = round(u);
     Set_Left_Motor(input_sig); 
 
     //Cancel the task if the encoder counts are within the targeted threshold 
    int32_t updated_error_left = Encoder_Counts_Left() - round(Get_Controller_Target(&left_cont));
-   while(ABS(target_threshold > updated_error_left)){
+   updated_error_left = sabs(updated_error_left);
+   while(target_threshold > updated_error_left){
         Task_Cancel( &task_update_controller_left_pos );
         Task_Activate( &task_set_pwm_zero_left, -1.0 );
    }
@@ -298,16 +303,16 @@ int32_t Set_Encoder_Target_Left(int32_t current_encoder_count, float dist, float
 
 
 //This function stops the motor and cancels the controller update task after the time limit has been reached
-void Terminate_Controller_Left(float time){
+void Terminate_Controller_Left(){
 
     MotorPWM_Set_Left( 0 );
     Task_Cancel( &task_update_controller_left_pos);
     
 }
 
-void Terminate_Controller_Right(float time){
+void Terminate_Controller_Right(){
 
-    MotorPWM_Set_Right( 0 );
+    MototPWM_Set_Right( 0 );
     Task_Cancel( &task_update_controller_right_pos);
     
 }
@@ -329,47 +334,68 @@ float Set_Target_Velocity_Right(float linear_vel, float angular_vel){
 }
 
 //Target vel argument is in inches per second
-float send_right_controller_update_vel(){
+void send_right_controller_update_vel(){
    
     float meas = (float)Encoder_Counts_Right();
 
-    float target_vel = Get_Controller_Target(&right_cont);
+    //float target_vel = Get_Controller_Target(&right_cont);
 
     //target_vel: inches per second. dt: seconds. count_per_inch: encoder counts per inch. Result is encoder counts
     //int32_t target_enc_pos = Encoder_Counts_Right() + (target_vel*count_per_inch*update_period);
     //filter the encoder counts that have been measured to eliminate noise
-    float u = Controller_Update(&right_cont, meas, update_period);
+    float update_interval = ((&right_cont) -> update_period);
+    float u = Controller_Update(&right_cont, meas, update_interval);
     u = Saturate(u,MAX_PWM);
     int16_t input_sig = round(u);
     Set_Right_Motor(input_sig); 
 
     //Cancel the task if the encoder counts are within the targeted threshold 
    int32_t updated_error_right = Encoder_Counts_Right() - round(Get_Controller_Target(&right_cont));
-   while(ABS(target_threshold > updated_error_right)){
+   updated_error_right = sabs(updated_error_right);
+   while(target_threshold > updated_error_right){
         Task_Cancel( &task_update_controller_right_pos );
         Task_Activate( &task_set_pwm_zero_right, -1.0 );
    }
 }
 
 //Target vel argument is in inches per second
-float send_left_controller_update_vel(){
+void send_left_controller_update_vel(){
    
     float meas = (float)Encoder_Counts_Left();
 
-    float target_vel = Get_Controller_Target(&left_cont);
+    //float target_vel = Get_Controller_Target(&left_cont);
 
     //target_vel: inches per second. dt: seconds. count_per_inch: encoder counts per inch. Result is encoder counts
     //int32_t target_enc_pos = Encoder_Counts_Right() + (target_vel*count_per_inch*update_period);
     //filter the encoder counts that have been measured to eliminate noise
-    float u = Controller_Update(&left_cont, meas, update_period);
+    float update_interval = ((&left_cont) -> update_period);
+    float u = Controller_Update(&left_cont, meas, update_interval);
     u = Saturate(u,MAX_PWM);
     int16_t input_sig = round(u);
     Set_Left_Motor(input_sig); 
 
     //Cancel the task if the encoder counts are within the targeted threshold 
    int32_t updated_error_left = Encoder_Counts_Left() - round(Get_Controller_Target(&left_cont));
-   while(ABS(target_threshold > updated_error_left)){
+   updated_error_left = sabs(updated_error_left);
+   while(target_threshold > updated_error_left){
         Task_Cancel( &task_update_controller_left_pos );
         Task_Activate( &task_set_pwm_zero_left, -1.0 );
    }
+}
+
+//This stands for "safe ABS", compiler is having issues with the ABS function, even with math.h and stblib.h
+int32_t sabs(int32_t i){
+    int32_t res;
+
+    if (i < 0)
+    {
+        res = -i;
+    }
+    else
+    {
+        res = i;
+    }
+
+    return res;
+
 }

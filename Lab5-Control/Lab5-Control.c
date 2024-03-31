@@ -39,6 +39,8 @@
 #include "Timing.h"           // for Time understanding
 #include "Controller.h"
 #include "Lab5_Tasks.h"
+#include "stdlib.h"
+#include "math.h"
 
 // put your task includes and/or function declarations here for future populaion
 
@@ -47,7 +49,7 @@ static const int32_t MAX_PWM= 500;
 //static const uint16_t TURN_THRESHOLD= 24; //24 ENCODER COUNTS = APPROX. 1/8"
 
 //int updated_error_left = 0; //need to declare this as global. It will be modified in a function and called in the main.
-i//nt updated_error_right = 0;
+//int updated_error_right = 0;
 
 // Best to identify them as "static" to make them indentified as internal and start with a "_" to identify as internal.
 // Try to initialize them if possible, so their values are never arbitrary.
@@ -66,8 +68,8 @@ void Initialize_Modules( float _time_not_used_ )
     Initialize_Battery_Monitor();
     Initialize_MotorPWM( MAX_PWM );
     //Initialize_Controller(Controller_t* p_cont, float kp, float* num, float* den, uint8_t order, float update_period)
-    Initialize_Controller(&left_cont, kp_left, num_left, den_left, order, update_period);
-    Initialize_Controller(&right_cont, kp_right, num_right, den_right, order, update_period);
+    Initialize_Controller(&left_cont, kp_left, num_left, den_left, order, controller_update_interval);
+    Initialize_Controller(&right_cont, kp_right, num_right, den_right, order, controller_update_interval);
 
     // Setup task handling
     Initialize_Task( &task_restart, &Initialize_Modules /*function pointer to call*/ );
