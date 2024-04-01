@@ -1,6 +1,8 @@
 #include "Controller.h"
-#include "Lab5_Tasks.h"
-
+//#include "Lab5_Tasks.h"
+//#include <math.h>
+//#include <stdlib.h>
+//#include "Filter.h"
 /**
  * Function Initialize_Controller sets up the z-transform based controller for the system.
  */
@@ -56,6 +58,7 @@ void Controller_Set_Target_Position( Controller_t* p_cont, float vel ){
  */
 float Controller_Update( Controller_t* p_cont, float measurement, float dt ){
 
+    float count_per_inch = 909.7/(2*M_PI*0.765);
     //***IF TARGET VELOCITY IS ZERO, USE POSITION AS TARGET
     float target;
     if(p_cont -> target_vel != 0){

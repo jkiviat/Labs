@@ -45,11 +45,24 @@
 // put your task includes and/or function declarations here for future populaion
 
 // put your global variables (only if absolutely required) here.
-static const int32_t MAX_PWM= 500;
-//static const uint16_t TURN_THRESHOLD= 24; //24 ENCODER COUNTS = APPROX. 1/8"
+static const uint16_t MAX_PWM= 500;
+//Left Controller Parameters
+static float num_left[] = {65.03, -65.03}; //THESE MUST BE UPDATED
+static float den_left[] = {1, -0.9853}; //THESE MUST BE UPDATED
+static float kp_left = 1.2641; //THESE MUST BE UPDATED
+//float static kd_left = 1.0000; //THESE MUST BE UPDATED
+//float static alpha_left = 1.0000; //THESE MUST BE UPDATED
 
-//int updated_error_left = 0; //need to declare this as global. It will be modified in a function and called in the main.
-//int updated_error_right = 0;
+//Right Controller Parameters
+static float num_right[] = {65.03, -65.03}; //THESE MUST BE UPDATED
+static float den_right[] = {1, -0.9853}; //THESE MUST BE UPDATED
+static float kp_right = 1.2641; //THESE MUST BE UPDATED
+//float kd_right = 1.0000; //THESE MUST BE UPDATED
+//float alpha_right = 1.0000; //THESE MUST BE UPDATED
+
+static uint8_t order = 3;
+static float controller_update_interval = .050; //units: seconds
+//static const uint16_t TURN_THRESHOLD= 24; //24 ENCODER COUNTS = APPROX. 1/8"
 
 // Best to identify them as "static" to make them indentified as internal and start with a "_" to identify as internal.
 // Try to initialize them if possible, so their values are never arbitrary.
