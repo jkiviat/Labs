@@ -455,8 +455,8 @@ void Task_Message_Handling( float _time_since_last )
                 Controller_Set_Target_Position(&left_cont, target_enc_left); //Controller_Set_Target_Position takes a float while this is an int32_t
                 Controller_Set_Target_Position(&right_cont, target_enc_right); //Controller_Set_Target_Position takes a float while this is an int32_t
 
-                //Task_Activiate(&task_terminate_controller_left, dist_dir.time);
-                //Task_Activiate(&task_terminate_controller_right, dist_dir.time);
+                Task_Activate(&task_terminate_controller_left, dist_dir.time);
+                Task_Activate(&task_terminate_controller_right, dist_dir.time);
 
                 if( dist_dir.time > 0 ) {
                     Task_Activate(&task_update_controller_right_pos, (&right_cont) -> update_period);
